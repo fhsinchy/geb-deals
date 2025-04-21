@@ -14,7 +14,7 @@ interface AmazonProduct {
 const app = express();
 
 // TODO: add CORS
-// TODO; add Rate Limiting
+// TODO: add Rate Limiting
 
 const scrapeAmazon = async (bookTitle: string) => {
   const amazonProducts: AmazonProduct[] = [];
