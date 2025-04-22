@@ -1,25 +1,66 @@
 import * as cheerio from "cheerio";
-import axios, { AxiosRequestConfig } from "axios";
+import axios, { AxiosRequestConfig, AxiosError } from "axios";
 import AmazonProduct from "./types";
 
-const scrapeAmazon = async (bookTitle: string) => {
+const scrapeAmazon = async (bookTitle: string): Promise<AmazonProduct[]> => {
     const amazonProducts: AmazonProduct[] = [];
   
     const baseUrl = "https://www.amazon.com";
+    
+    // Sanitize and format the search query
     const queryParameter = bookTitle.toLowerCase().replaceAll(" ", "+");
-  
+
+    // Configuration for the Axios request, including a User-Agent to mimic a browser
     const axiosReqConfig: AxiosRequestConfig = {
-      baseURL: baseUrl,
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36",
-      },
+        baseURL: baseUrl,
+        headers: {
+            "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9", // Added Accept-Language
+            "Accept-Encoding": "gzip, deflate, br", // Added Accept-Encoding
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8", // Added Accept
+            // Add other headers as needed to appear more like a real browser
+        },
+        timeout: 15000, // Add a timeout (e.g., 15 seconds)
     };
   
-    const amazonResponse = await axios.get(
-      `/s?k=${queryParameter}&i=digital-text`,
-      axiosReqConfig
-    );
+    let amazonResponse;
+    try {
+        console.log(`Attempting to fetch Amazon search results for: ${bookTitle}`);
+        // Make the GET request to Amazon's search page for digital text (Kindle)
+        amazonResponse = await axios.get(
+            `/s?k=${queryParameter}&i=digital-text`,
+            axiosReqConfig
+        );
+
+        // Optional: Check for non-2xx status codes if needed. Axios throws for >= 400 by default.
+        if (amazonResponse.status < 200 || amazonResponse.status >= 300) {
+            console.error(`Amazon request received non-success status: ${amazonResponse.status}`);
+            // Return empty array as the request didn't succeed as expected
+            return amazonProducts;
+        }
+        console.log(`Successfully fetched Amazon page. Status: ${amazonResponse.status}`);
+
+    } catch (error) {
+        // Handle potential errors during the network request
+        if (axios.isAxiosError(error)) {
+            // Specifically handle Axios errors (network, timeout, status code >= 400)
+            const axiosError = error as AxiosError;
+            console.error(
+                `Axios error fetching Amazon page: ${axiosError.message}`,
+                `Status: ${axiosError.response?.status}`,
+                `URL: ${axiosError.config?.baseURL}${axiosError.config?.url}`
+            );
+        } else if (error instanceof Error) {
+            // Handle generic JavaScript errors
+            console.error(`Generic error fetching Amazon page: ${error.message}`);
+        } else {
+            // Handle other potential throwables
+            console.error(`An unexpected error occurred during fetch: ${error}`);
+        }
+        // Return an empty array indicating failure to fetch data
+        return amazonProducts;
+    }
   
     const $ = cheerio.load(amazonResponse.data);
   
