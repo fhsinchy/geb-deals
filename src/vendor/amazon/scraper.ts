@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import axios, { AxiosRequestConfig, AxiosError } from "axios";
-import AmazonProduct from "./types";
+import { AmazonProduct } from "./types";
 
 const scrapeAmazon = async (bookTitle: string): Promise<AmazonProduct[]> => {
   const amazonProducts: AmazonProduct[] = [];

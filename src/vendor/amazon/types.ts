@@ -1,3 +1,9 @@
+import { ParamsDictionary } from "express-serve-static-core";
+
+interface AmazonRouteParams extends ParamsDictionary {
+  bookTitle: string;
+}
+
 interface AmazonProduct {
   bookTitle: string | null;
   bookPrice: number | null;
@@ -7,4 +13,7 @@ interface AmazonProduct {
   kindleUnlimitedPrice: number | null;
 }
 
-export default AmazonProduct;
+export {
+  AmazonProduct,
+  AmazonRouteParams,
+};
